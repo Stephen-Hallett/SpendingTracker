@@ -11,8 +11,7 @@ from .config import settings
 # Logging
 class MyLogger:
     def __init__(self) -> None:
-        logging.basicConfig(
-            level=logging.DEBUG if settings.debug else logging.INFO)
+        logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO)
 
     def get_logger(self, name: str | None = None) -> logging.Logger:
         return logging.getLogger(name)
@@ -42,15 +41,12 @@ def log(
                         x for x in args if isinstance(x, logging.Logger | MyLogger)
                     ]
                     if hasattr(first_args, "__dict__"):  # is first argument `self`
-                        logger_params = (
-                            logger_params
-                            + [
-                                x
-                                # does class (dict) members have any logger #NOQA
-                                for x in first_args.__dict__.values()
-                                if isinstance(x, logging.Logger | MyLogger)
-                            ]
-                        )
+                        logger_params = logger_params + [
+                            x
+                            # does class (dict) members have any logger
+                            for x in first_args.__dict__.values()
+                            if isinstance(x, logging.Logger | MyLogger)
+                        ]
                     h_logger = next(
                         iter(logger_params), MyLogger()
                     )  # get the next/first/default logger
@@ -68,8 +64,7 @@ def log(
                 signature = ", ".join(args_repr + kwargs_repr)
                 if settings.debug:
                     logger.debug(
-                        f"function {func.__name__} called with args {
-                            signature}"
+                        f"function {func.__name__} called with args {signature}"
                     )
                 else:
                     logger.info(f"function {func.__name__} called")
@@ -84,8 +79,7 @@ def log(
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 logger.info(
-                    f"function {func.__name__} completed in {
-                        elapsed_time:.4f} seconds"
+                    f"function {func.__name__} completed in {elapsed_time:.4f} seconds"
                 )
                 return result
             except Exception as e:
