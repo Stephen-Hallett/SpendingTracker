@@ -1,0 +1,111 @@
+name: "Infrastructure Pipeline"
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - "infra/**"
+      - ".github/workflows/infrastructure**"
+  
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - "infra/**"
+      - ".github/workflows/infrastructure**"
+  
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: 1.6.3
+  TF_CONFIG_DIR: "infra/deploy"
+  PROJECT_ID: nutritionanalysis
+
+jobs:
+  get_branch_name:
+    runs-on: ubuntu-latest
+    outputs:
+      branch_name: ${{ steps.set_branch.outputs.branch_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set Branch name
+        id: set_branch
+        run: |
+          echo "branch_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          if [ -n "${{ github.base_ref }}" ]; then
+            echo "branch_name=${{ github.base_ref }}" >> $GITHUB_OUTPUT
+          fi
+
+  terraform:
+    needs: get_branch_name
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    environment: ${{ needs.get_branch_name.outputs.branch_name }}
+    env:
+      BRANCH_NAME: ${{ needs.get_branch_name.outputs.branch_name }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: environment
+        run: |
+          echo Environment / Branch name
+          echo ${{env.BRANCH_NAME}}
+        
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Login via Azure cli"
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Prepare ARM  Environment Variables
+        run: |
+          echo "ARM_CLIENT_ID=$( jq -r '.clientId' <<< $AZURE_CREDENTIALS )" >> $GITHUB_ENV;
+          echo "ARM_CLIENT_SECRET=$( jq -r '.clientSecret' <<< $AZURE_CREDENTIALS )" >> $GITHUB_ENV;
+          echo "ARM_SUBSCRIPTION_ID=$( jq -r '.subscriptionId' <<< $AZURE_CREDENTIALS )" >> $GITHUB_ENV;
+          echo "ARM_TENANT_ID=$( jq -r '.tenantId' <<< $AZURE_CREDENTIALS )" >> $GITHUB_ENV;
+          echo "ARM_ACCESS_KEY=$( jq -r '.accessKey' <<< $AZURE_CREDENTIALS )" >> $GITHUB_ENV;
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        run: terraform -chdir=${{ env.TF_CONFIG_DIR }} init
+
+      - name: Terraform Workspace
+        run: terraform -chdir=${{ env.TF_CONFIG_DIR }} workspace select -or-create ${{env.BRANCH_NAME}}${{env.PROJECT_ID}}
+
+      - name: Terraform validate
+        run: terraform -chdir=${{ env.TF_CONFIG_DIR }} fmt
+
+      - name: Terraform plan
+        run: |
+          terraform -chdir=${{ env.TF_CONFIG_DIR }} plan \
+            -out=deployment.tfplan \
+            -input=false \
+            -var-file ${{env.BRANCH_NAME}}.tfvars \
+            -var env=${{env.BRANCH_NAME}} \
+            -var project_id=${{env.PROJECT_ID}} \
+            -var client_id=$ARM_CLIENT_ID \
+            -var client_secret=$ARM_CLIENT_SECRET \
+            -var subscription_id=$ARM_SUBSCRIPTION_ID \
+            -var tenant_id=$ARM_TENANT_ID
+
+      - name: Terraform apply
+        if: github.event_name == 'push' && success()
+        run: |
+          terraform -chdir=${{ env.TF_CONFIG_DIR }} apply \
+            -auto-approve \
+            -input=false deployment.tfplan
