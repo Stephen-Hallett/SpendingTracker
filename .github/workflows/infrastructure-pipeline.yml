@@ -6,14 +6,14 @@ on:
       - dev
     paths:
       - "infra/**"
-      - ".github/workflows/infrastructure**"
+      - ".github/workflows/infra**"
   
   pull_request:
     branches:
       - dev
     paths:
       - "infra/**"
-      - ".github/workflows/infrastructure**"
+      - ".github/workflows/infra**"
   
 permissions:
   contents: read
@@ -21,7 +21,7 @@ permissions:
 env:
   TF_VERSION: 1.6.3
   TF_CONFIG_DIR: "infra/deploy"
-  PROJECT_ID: nutritionanalysis
+  PROJECT_ID: transactions
 
 jobs:
   get_branch_name:
