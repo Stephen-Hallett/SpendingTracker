@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .controller import Controller
-from .schemas import Test
 
 app = FastAPI()
 app.add_middleware(
@@ -20,8 +19,8 @@ con = Controller()
 
 
 @app.get("/test")
-async def test() -> Test:
-    return con.test()
+async def test() -> str:
+    return "dw its working"
 
 
 async def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
