@@ -24,7 +24,7 @@ resource "azurerm_service_plan" "asp" {
 
 resource "azurerm_linux_function_app" "fa" {
   name                       = "fa-${var.project_id}-${var.env}-eau-001"
-  location                   = azurerm_service_plan.asp.location
+  location                   = azurerm_service_plan.asp.rg.location
   resource_group_name        = data.azurerm_resource_group.rg.name
   service_plan_id            = azurerm_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.sa.name
