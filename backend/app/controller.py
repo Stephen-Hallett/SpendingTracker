@@ -25,7 +25,7 @@ class Controller:
     def get_accounts(self) -> list[schemas.Account]:
         akahu_accounts = requests.get(
             "https://api.akahu.io/v1/accounts", headers=self.headers
-        ).json()
+        ).json()["items"]
         return [
             {
                 "_id": account["_id"],
@@ -38,12 +38,12 @@ class Controller:
         ]
 
     def get_transactions(self) -> list[dict]:
-        accounts = self._get_accounts()
+        accounts = self.get_accounts()
         all_transactions = []
         for account in accounts:
             account_transactions = requests.get(
                 f"https://api.akahu.io/v1/accounts/{account['_id']}/transactions",
                 headers=self.headers,
-            ).json()
-            all_transactions += account_transactions["items"]
+            ).json()["items"]
+            all_transactions += account_transactions
         return all_transactions
