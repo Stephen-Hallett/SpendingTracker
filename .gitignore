@@ -2,3 +2,4 @@ infra/secrets*
 .venv
 __pycache__
 local.settings.json
+.env
