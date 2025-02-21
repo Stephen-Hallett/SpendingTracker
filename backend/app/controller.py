@@ -3,7 +3,7 @@ import os
 
 import requests
 
-from . import schemas
+from .schemas import Account, Test, Transaction
 from .util import log
 
 logger = logging.getLogger(__name__)
@@ -19,10 +19,10 @@ class Controller:
         self.transaction_account_type = "CHECKING"
 
     @log
-    def test(self) -> schemas.Test:
+    def test(self) -> Test:
         return {"test": "Dw it's working king"}
 
-    def get_accounts(self) -> list[schemas.Account]:
+    def get_accounts(self) -> list[Account]:
         akahu_accounts = requests.get(
             "https://api.akahu.io/v1/accounts", headers=self.headers
         ).json()["items"]
@@ -37,7 +37,7 @@ class Controller:
             if account["type"] == self.transaction_account_type
         ]
 
-    def get_transactions(self) -> list[dict]:
+    def get_transactions(self) -> list[Transaction]:
         accounts = self.get_accounts()
         all_transactions = []
         for account in accounts:
@@ -45,5 +45,8 @@ class Controller:
                 f"https://api.akahu.io/v1/accounts/{account['_id']}/transactions",
                 headers=self.headers,
             ).json()["items"]
-            all_transactions += account_transactions
+            all_transactions += [
+                Transaction.model_validate(transaction)
+                for transaction in account_transactions
+            ]
         return all_transactions

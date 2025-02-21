@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .controller import Controller
-from .schemas import Account, Test
+from .schemas import Account, Test, Transaction
 
 app = FastAPI()
 app.add_middleware(
@@ -30,8 +30,13 @@ async def accounts() -> list[Account]:
 
 
 @app.get("/transactions")
-async def transactions() -> list[dict]:
+async def transactions() -> list[Transaction]:
     return con.get_transactions()
+
+
+@app.get("/spending_summary")
+async def spending_summary() -> dict:
+    return con.spending_summary()
 
 
 async def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
