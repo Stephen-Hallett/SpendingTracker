@@ -41,3 +41,8 @@ class Transaction(BaseModel):
         if isinstance(value, dict):
             return value["name"]
         return value
+
+
+class SpendingSummary(BaseModel):
+    Week: float
+    Month: float

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .controller import Controller
-from .schemas import Account, Test, Transaction
+from .schemas import Account, SpendingSummary, Test, Transaction
 
 app = FastAPI()
 app.add_middleware(
@@ -35,7 +35,7 @@ async def transactions() -> list[Transaction]:
 
 
 @app.get("/spending_summary")
-async def spending_summary() -> dict:
+async def spending_summary() -> SpendingSummary:
     return con.spending_summary()
 
 

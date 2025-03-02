@@ -1,9 +1,11 @@
 import logging
 import os
+from datetime import datetime, timedelta
 
+import polars as pl
 import requests
 
-from .schemas import Account, Test, Transaction
+from .schemas import Account, SpendingSummary, Test, Transaction
 from .util import log
 
 logger = logging.getLogger(__name__)
@@ -50,3 +52,28 @@ class Controller:
                 for transaction in account_transactions
             ]
         return all_transactions
+
+    def spending_summary(self) -> SpendingSummary:
+        all_transactions = pl.DataFrame(self.get_transactions())
+        ctx = pl.SQLContext(df=all_transactions)
+        dt = datetime.now()
+        week_start = dt - timedelta(
+            days=dt.weekday(), hours=dt.hour, minutes=dt.minute, seconds=dt.second
+        )
+        week_start_str = week_start.strftime("%Y-%m-%d %H:%M:%S")
+
+        month_start = dt - timedelta(
+            days=dt.day, hours=dt.hour, minutes=dt.minute, seconds=dt.second
+        )
+        month_start_str = month_start.strftime("%Y-%m-%d %H:%M:%S")
+
+        this_week = ctx.execute(
+            f"SELECT * FROM df WHERE df.date > '{week_start_str}' AND type = 'DEBIT'"  # NOQA
+        ).collect()
+        this_month = ctx.execute(
+            f"SELECT * FROM df WHERE df.date > '{month_start_str}' AND type = 'DEBIT'"  # NOQA
+        ).collect()
+        return {
+            "Week": abs(this_week["amount"].sum()),
+            "Month": abs(this_month["amount"].sum()),
+        }
