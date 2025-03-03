@@ -18,7 +18,7 @@ class Controller:
             "Authorization": os.environ.get("AUTH"),
             "X-Akahu-ID": os.environ.get("AKAHU_ID"),
         }
-        self.transaction_account_type = "CHECKING"
+        self.transaction_account_types = ["CHECKING", "CREDITCARD"]
 
     @log
     def test(self) -> Test:
@@ -36,7 +36,7 @@ class Controller:
                 "amount": account["balance"]["available"],
             }
             for account in akahu_accounts
-            if account["type"] == self.transaction_account_type
+            if account["type"] in self.transaction_account_types
         ]
 
     def get_transactions(self) -> list[Transaction]:
@@ -58,12 +58,12 @@ class Controller:
         ctx = pl.SQLContext(df=all_transactions)
         dt = datetime.now()
         week_start = dt - timedelta(
-            days=dt.weekday(), hours=dt.hour, minutes=dt.minute, seconds=dt.second
+            days=dt.weekday() - 1, hours=dt.hour, minutes=dt.minute, seconds=dt.second
         )
         week_start_str = week_start.strftime("%Y-%m-%d %H:%M:%S")
 
         month_start = dt - timedelta(
-            days=dt.day, hours=dt.hour, minutes=dt.minute, seconds=dt.second
+            days=dt.day - 1, hours=dt.hour, minutes=dt.minute, seconds=dt.second
         )
         month_start_str = month_start.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -73,6 +73,8 @@ class Controller:
         this_month = ctx.execute(
             f"SELECT * FROM df WHERE df.date > '{month_start_str}' AND type = 'DEBIT'"  # NOQA
         ).collect()
+
+        print(this_month)
         return {
             "Week": abs(this_week["amount"].sum()),
             "Month": abs(this_month["amount"].sum()),

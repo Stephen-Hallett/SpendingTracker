@@ -3,3 +3,4 @@ infra/secrets*
 __pycache__
 local.settings.json
 .env
+test
