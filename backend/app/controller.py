@@ -70,7 +70,7 @@ class Controller:
         month_start_str = month_start.strftime("%Y-%m-%d %H:%M:%S")
 
         this_week = ctx.execute(
-            f"SELECT * FROM df WHERE df.date > '{week_start_str}'"  # NOQA
+            f"SELECT * FROM df WHERE df.date > '{week_start_str}' AND type = 'DEBIT'"  # NOQA
         ).collect()
         this_month = ctx.execute(
             f"SELECT * FROM df WHERE df.date > '{month_start_str}' AND type = 'DEBIT'"  # NOQA
