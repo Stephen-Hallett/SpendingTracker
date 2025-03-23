@@ -35,7 +35,7 @@ resource "azurerm_linux_function_app" "fa" {
       allowed_origins = ["*"]
     }
     application_stack {
-      python_version = "3.9"
+      python_version = "3.11"
     }
   }
 }
@@ -53,7 +53,7 @@ resource "azurerm_linux_function_app" "fa2" {
       allowed_origins = ["*"]
     }
     application_stack {
-      python_version = "3.9"
+      python_version = "3.11"
     }
   }
 }
