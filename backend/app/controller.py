@@ -26,10 +26,11 @@ class Controller:
     def test(self) -> Test:
         return {"test": "Dw it's working king"}
 
+    @log
     def get_accounts(self) -> list[Account]:
         akahu_accounts = requests.get(
             "https://api.akahu.io/v1/accounts", headers=self.headers
-        ).json()["items"]
+        ).json()
         return [
             {
                 "_id": account["_id"],
@@ -37,10 +38,11 @@ class Controller:
                 "company": account["connection"]["name"],
                 "amount": account["balance"]["available"],
             }
-            for account in akahu_accounts
+            for account in akahu_accounts["items"]
             if account["type"] in self.transaction_account_types
         ]
 
+    @log
     def get_transactions(self) -> list[Transaction]:
         accounts = self.get_accounts()
         all_transactions = []
@@ -55,6 +57,7 @@ class Controller:
                 all_transactions.append(Transaction.model_validate(transaction))
         return all_transactions
 
+    @log
     def spending_summary(self) -> SpendingSummary:
         all_transactions = pl.DataFrame(self.get_transactions())
         ctx = pl.SQLContext(df=all_transactions)
