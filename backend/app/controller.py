@@ -1,9 +1,9 @@
 import logging
 import os
 from datetime import datetime, timedelta
-import pytz
 
 import polars as pl
+import pytz
 import requests
 
 from .schemas import Account, SpendingSummary, Test, Transaction
@@ -20,7 +20,8 @@ class Controller:
             "X-Akahu-ID": os.environ.get("AKAHU_ID"),
         }
         self.transaction_account_types = ["CHECKING", "CREDITCARD"]
-        self.tz = pytz.timezone('Pacific/Auckland')
+        self.tz = pytz.timezone("Pacific/Auckland")
+        self.transaction_types = ["DEBIT", "EFTPOS", "CREDIT CARD", "STANDING ORDER"]
 
     @log
     def test(self) -> Test:
@@ -53,7 +54,9 @@ class Controller:
             ).json()["items"]
             for transaction in account_transactions:
                 # Dates are stored in UTC, converting to NZDT is easiest
-                transaction["date"] = datetime.strptime(transaction["date"], "%Y-%m-%dT%H:%M:%S.%fZ") + timedelta(hours=13, minutes=1)
+                transaction["date"] = datetime.strptime(
+                    transaction["date"], "%Y-%m-%dT%H:%M:%S.%fZ"
+                ) + timedelta(hours=13, minutes=1)
                 all_transactions.append(Transaction.model_validate(transaction))
         return all_transactions
 
@@ -68,15 +71,17 @@ class Controller:
         week_start_str = week_start.strftime("%Y-%m-%d %H:%M:%S")
 
         month_start = dt - timedelta(
-            days=dt.day-1, hours=dt.hour, minutes=dt.minute, seconds=dt.second
+            days=dt.day - 1, hours=dt.hour, minutes=dt.minute, seconds=dt.second
         )
         month_start_str = month_start.strftime("%Y-%m-%d %H:%M:%S")
 
+        transactions_str = ", ".join(f"'{t}'" for t in self.transaction_types)
+
         this_week = ctx.execute(
-            f"SELECT * FROM df WHERE df.date > '{week_start_str}' AND type = 'DEBIT'"  # NOQA
+            f"SELECT * FROM df WHERE df.date > '{week_start_str}' AND type IN ({transactions_str})"  # NOQA
         ).collect()
         this_month = ctx.execute(
-            f"SELECT * FROM df WHERE df.date > '{month_start_str}' AND type = 'DEBIT'"  # NOQA
+            f"SELECT * FROM df WHERE df.date > '{month_start_str}' AND type IN ({transactions_str})"  # NOQA
         ).collect()
 
         return {
